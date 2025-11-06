@@ -33,76 +33,97 @@ def generate_data(num_records=50000):
 # Initialize the global DataFrame
 SALES_DATA_DF = generate_data()
 
-# --- Data Processing Functions (Requires Lock, Now Accepts Filter) ---
+# --- Data Processing Functions ---
 
 def aggregate_data(lock: threading.Lock, days_ago: int = 7):
     """
-    Processes the raw data into aggregated metrics.
-    Acquires the lock for thread-safe reading and filters data based on days_ago.
+    Processes the raw data into aggregated metrics, filtering by 'days_ago',
+    normalizing daily sales, and providing a sample of the latest transactions.
     """
     global SALES_DATA_DF
     
+    # Calculate the cutoff time for filtering
+    cutoff_time = datetime.now() - timedelta(days=days_ago)
+    
     # 1. Thread-safe reading and filtering
     with lock:
-        # Calculate the cutoff time for filtering
-        cutoff_time = datetime.now() - timedelta(days=days_ago)
-        
         # Filter the DataFrame for the relevant time period
         df_filtered = SALES_DATA_DF[SALES_DATA_DF['timestamp'] >= cutoff_time].copy() 
         
+    # --- Handle Empty Data Case ---
     if df_filtered.empty:
+        end_date = datetime.now().date()
+        start_date = end_date - timedelta(days=days_ago - 1)
+        labels = [(start_date + timedelta(days=i)).strftime('%b %d') for i in range(days_ago)]
+        
         return {
-            'daily_sales': {'labels': [], 'data': []},
+            'daily_sales': {'labels': labels, 'data': [0.0] * days_ago},
             'category_metrics': {'labels': [], 'data': []},
             'region_metrics': {'labels': [], 'data': []},
             'total_revenue': 0.0,
-            'total_transactions': 0, # Added for KPI calculation
+            'total_transactions': 0,
+            'revenue_per_hour': 0.0, 
+            'latest_transactions': [], # 🚨 Added empty list for transactions
             'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
 
-    # 2. Aggregation using the filtered DataFrame
+    # 2. Aggregation and Normalization
     
-    # Total Sales Trend (Aggregated by Day)
-    df_daily = df_filtered.set_index('timestamp').resample('D')['sales_amount'].sum().reset_index()
+    # Total Sales Trend (Aggregated by Day & Normalized)
+    df_daily = df_filtered.set_index('timestamp').resample('D')['sales_amount'].sum()
+    end_date = datetime.now().date()
+    start_date = end_date - timedelta(days=days_ago - 1)
+    full_range_index = pd.date_range(start=start_date, end=end_date, freq='D')
+    df_normalized = df_daily.reindex(full_range_index, fill_value=0)
+
     daily_sales = {
-        'labels': df_daily['timestamp'].dt.strftime('%Y-%m-%d').tolist(),
-        'data': df_daily['sales_amount'].round(2).tolist()
+        'labels': df_normalized.index.strftime('%b %d').tolist(), 
+        'data': df_normalized.round(2).tolist()
     }
 
-    # Sales by Category
+    # 3. Aggregate Other Metrics
     category_sales = df_filtered.groupby('category')['sales_amount'].sum().sort_values(ascending=False).round(2)
     category_metrics = {
         'labels': category_sales.index.tolist(),
         'data': category_sales.tolist()
     }
 
-    # Sales by Region
     region_sales = df_filtered.groupby('region')['sales_amount'].sum().sort_values(ascending=False).round(2)
     region_metrics = {
         'labels': region_sales.index.tolist(),
         'data': region_sales.tolist()
     }
 
-    # Total Revenue (KPI)
+    # 4. KPI Calculation
     total_revenue = df_filtered['sales_amount'].sum().round(2)
-    
-    # Total Transactions (NEW KPI)
     total_transactions = len(df_filtered)
+    
+    # Calculate Revenue Per Hour
+    total_hours = days_ago * 24
+    revenue_per_hour = (total_revenue / total_hours).round(2)
+
+    # 🚨 NEW: Sample the 15 latest transactions
+    # Sort by timestamp (descending) and take the top 15
+    df_latest = df_filtered.sort_values(by='timestamp', ascending=False).head(15)
+    
+    # Format for JSON serializing (React consumption)
+    latest_transactions = df_latest.assign(
+        timestamp=df_latest['timestamp'].dt.strftime('%H:%M:%S %b %d')
+    )[['timestamp', 'category', 'region', 'sales_amount']].to_dict('records')
 
     return {
         'daily_sales': daily_sales,
         'category_metrics': category_metrics,
         'region_metrics': region_metrics,
         'total_revenue': total_revenue,
-        'total_transactions': total_transactions, # Return transaction count
+        'total_transactions': total_transactions, 
+        'revenue_per_hour': revenue_per_hour, 
+        'latest_transactions': latest_transactions, # 🚨 NEW DATA FIELD RETURNED
         'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
 
 def add_new_sales(lock: threading.Lock, num_new_records=50):
-    """
-    Simulates a 'real-time' update by adding new records.
-    Acquires the lock for thread-safe writing.
-    """
+    # (Unchanged real-time data ingestion function)
     global SALES_DATA_DF
 
     end_time = datetime.now()
@@ -123,7 +144,6 @@ def add_new_sales(lock: threading.Lock, num_new_records=50):
     new_df = pd.DataFrame(new_data).sort_values(by='timestamp')
     
     with lock:
-        # Append the new data to the main dataset
         SALES_DATA_DF = pd.concat([SALES_DATA_DF, new_df], ignore_index=True)
     
     print(f"[{datetime.now().strftime('%H:%M:%S')}] Added {num_new_records} new sales records. Total records: {len(SALES_DATA_DF)}")

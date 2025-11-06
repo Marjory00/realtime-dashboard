@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Line, Doughnut, Bar } from 'react-chartjs-2'; 
-import GaugeChart from 'react-gauge-chart'; 
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 
-// 🚨 NEW: Import the CSS file
 import './App.css'; 
 
 // Register ALL Chart.js components we need
@@ -25,13 +23,44 @@ const API_URL = 'http://localhost:5000/api/dashboard-data';
 // --- Helper Components ---
 
 // Component for displaying individual KPI cards
-// 🚨 CHANGES: Uses CSS classes for styling
 const KPICard = ({ title, value, unit = '', color = '#007bff' }) => (
     <div className="kpi-card-style" style={{ border: `1px solid ${color}` }}>
         <p style={{ color: '#666' }}>{title}</p>
         <h2 style={{ color: color }}>
             {unit}{value.toLocaleString()}
         </h2>
+    </div>
+);
+
+// 🚨 NEW COMPONENT: Displays the latest transactions in a table
+const TransactionsTable = ({ transactions }) => (
+    <div className='transactions-table-container'>
+        <h3 style={{ color: '#333', marginTop: '0' }}>Latest 15 Transactions</h3>
+        <table className="transactions-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Category</th>
+                    <th>Region</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {transactions.map((t, index) => (
+                    <tr key={index}>
+                        <td>{t.timestamp}</td>
+                        <td>{t.category}</td>
+                        <td>{t.region}</td>
+                        <td className='amount-positive'>
+                            ${t.sales_amount.toFixed(2)}
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+        {transactions.length === 0 && (
+             <p style={{ textAlign: 'center', color: '#6c757d' }}>No recent transactions found in the filtered range.</p>
+        )}
     </div>
 );
 
@@ -77,10 +106,19 @@ function App() {
   // --- Calculated KPIs (Client-Side) ---
   const totalTransactions = data?.total_transactions || 0; 
   const avgSaleAmount = totalTransactions > 0 ? (data.total_revenue / totalTransactions) : 0;
-  const targetTransactionCount = filterDays * 15000; 
-  const salesVelocityProxy = totalTransactions / targetTransactionCount;
-  const salesVelocityValue = salesVelocityProxy > 1 ? 0.99 : salesVelocityProxy; 
   
+  // Revenue per Hour Metric & Conditional Formatting
+  const revenuePerHour = data?.revenue_per_hour || 0;
+  let rphStatusColor = '#17a2b8'; 
+
+  if (revenuePerHour < 2000) {
+    rphStatusColor = '#dc3545'; // Red (Poor performance)
+  } else if (revenuePerHour < 5000) {
+    rphStatusColor = '#ffc107'; // Yellow (Needs improvement)
+  } else {
+    rphStatusColor = '#28a745'; // Green (Excellent)
+  }
+
 
   // --- Chart Data Configuration (Unchanged) ---
   const dailySalesData = {
@@ -141,7 +179,7 @@ function App() {
     }
   };
 
-  // --- Dashboard Layout (Uses CSS Classes) ---
+  // --- Dashboard Layout ---
   return (
     <div className='App'>
       
@@ -149,7 +187,7 @@ function App() {
       <header className='dashboard-header'>
         <h1 style={{ color: '#333' }}>Realtime Sales Dashboard</h1>
         <p style={{ margin: '5px 0 15px 0', fontSize: '0.9em', color: '#666' }}>
-            Data Stream Status: **Active** | Last Update: **{data.last_updated}**
+            Data Stream Status: Active | Last Update: {data.last_updated}
         </p>
         
         {/* Filter Dropdown UI */}
@@ -167,7 +205,7 @@ function App() {
         </div>
       </header>
       
-      {/* 🚨 KPI Grid (Responsive 4-2-1 Column Layout) */}
+      {/* KPI Grid (Responsive 4-2-1 Column Layout) */}
       <div className='kpi-grid'>
           <KPICard 
               title={`Total Revenue (${filterDays}D)`} 
@@ -186,25 +224,15 @@ function App() {
               unit="$" 
               color="#ffc107" 
           />
-          {/* Gauge Card using class and inline style for border */}
-          <div className='kpi-card-style' style={{ border: '1px solid #17a2b8', textAlign: 'center' }}>
-              <p style={{ color: '#666' }}>Sales Velocity Index</p>
-              <GaugeChart 
-                  id="sales-velocity-gauge" 
-                  nrOfLevels={3} 
-                  arcsLength={[0.4, 0.3, 0.3]} 
-                  colors={['#FFC371', '#FF6B6B', '#5DA399']}
-                  percent={salesVelocityValue} 
-                  hideText={true}
-                  style={{ width: '100%', height: '100px' }}
-              />
-              <p style={{ margin: '0', fontWeight: 'bold', color: '#17a2b8' }}>
-                {Math.round(salesVelocityValue * 100)}% of Target
-              </p>
-          </div>
+          <KPICard 
+              title={`Avg. Revenue per Hour`} 
+              value={revenuePerHour.toFixed(2)} 
+              unit="$" 
+              color={rphStatusColor} 
+          />
       </div>
       
-      {/* 🚨 Chart Grid (Responsive 2-1 Column Layout) */}
+      {/* Chart Grid (Responsive 2-1 Column Layout) */}
       <div className='chart-grid'>
         
         {/* ROW 1: Daily Sales Line Chart */}
@@ -233,6 +261,9 @@ function App() {
             <p style={{ color: 'green', fontWeight: 'bold' }}>All services functional!</p>
         </div>
       </div>
+
+      {/* 🚨 NEW: Transactions Table Component is now included here */}
+      <TransactionsTable transactions={data.latest_transactions || []} />
 
     </div>
   );
