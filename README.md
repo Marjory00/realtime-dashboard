@@ -30,6 +30,7 @@ The primary purpose of this project is to build a full-stack, real-time data vis
 
 ## 🏗️ Complete Project Structure
 
+```
 realtime-dashboard/       <-- Main Root Folder
 ├── backend/              <-- Flask/Python Backend
 │   ├── venv/             <-- Python Virtual Environment
@@ -55,7 +56,7 @@ realtime-dashboard/       <-- Main Root Folder
 │   └── vite.config.js
 │
 └── README.md
-
+```
 
 ## 🚀 Getting Started
 
