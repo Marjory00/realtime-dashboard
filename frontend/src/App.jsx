@@ -32,7 +32,7 @@ const KPICard = ({ title, value, unit = '', color = '#007bff' }) => (
     </div>
 );
 
-// 🚨 NEW COMPONENT: Displays the latest transactions in a table
+// Displays the latest transactions in a table
 const TransactionsTable = ({ transactions }) => (
     <div className='transactions-table-container'>
         <h3 style={{ color: '#333', marginTop: '0' }}>Latest 15 Transactions</h3>
@@ -72,10 +72,24 @@ function App() {
   const [error, setError] = useState(null);
   
   const [filterDays, setFilterDays] = useState(7); 
+  // NEW STATE FOR CUSTOM DATE RANGE
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const fetchData = async () => {
     try {
-      const url = `${API_URL}?days=${filterDays}`; 
+      
+      let url = `${API_URL}?`;
+      
+      // NEW: Priority is given to custom dates if both are set and valid
+      if (startDate && endDate) {
+          url += `start_date=${startDate}&end_date=${endDate}`;
+          // Set filterDays to -1 to indicate custom range is active (and prevent days=X from being appended)
+          setFilterDays(-1); 
+      } else {
+          url += `days=${filterDays}`;
+      }
+
       const response = await axios.get(url);
       setData(response.data);
       setLoading(false);
@@ -89,11 +103,33 @@ function App() {
 
   useEffect(() => {
     setLoading(true); 
+    // Trigger fetchData whenever filterDays, startDate, or endDate changes
     fetchData(); 
     
     const intervalId = setInterval(fetchData, 10000); 
     return () => clearInterval(intervalId);
-  }, [filterDays]); 
+  }, [filterDays, startDate, endDate]); // Updated dependency array
+
+  // Handler for preset days filter change
+  const handleDaysChange = (e) => {
+      const days = parseInt(e.target.value);
+      setFilterDays(days);
+      // Reset custom dates when a preset is selected
+      setStartDate('');
+      setEndDate('');
+  };
+  
+  // Handler for applying custom range
+  const handleApplyRange = () => {
+      if (!startDate || !endDate) {
+          alert("Please select both a start and end date.");
+          return;
+      }
+      // Setting filterDays to -1 signals that the custom range is active
+      setFilterDays(-1); 
+      // The state change for startDate/endDate combined with filterDays=-1 will trigger useEffect/fetchData
+  }
+
 
   if (loading || !data) {
     return <h1 style={{ color: '#007bff', textAlign: 'center', marginTop: '50px' }}>Loading Dashboard Data...</h1>;
@@ -118,6 +154,11 @@ function App() {
   } else {
     rphStatusColor = '#28a745'; // Green (Excellent)
   }
+  
+  // Determine filter title based on active filter
+  const currentFilterTitle = (startDate && endDate && filterDays === -1) 
+      ? `${startDate} to ${endDate}`
+      : `Last ${filterDays === 1 ? '24 Hours' : `${filterDays} Days`}`;
 
 
   // --- Chart Data Configuration (Unchanged) ---
@@ -139,7 +180,7 @@ function App() {
     responsive: true,
     plugins: {
       legend: { position: 'top' },
-      title: { display: true, text: `Daily Sales Trend (Last ${filterDays} Days)` }, 
+      title: { display: true, text: `Daily Sales Trend (${currentFilterTitle})` }, // Updated Title
     },
   };
 
@@ -172,7 +213,7 @@ function App() {
     responsive: true,
     indexAxis: 'y', 
     plugins: {
-        title: { display: true, text: `Revenue by Product Category (Last ${filterDays} Days)` }, 
+        title: { display: true, text: `Revenue by Product Category (${currentFilterTitle})` }, // Updated Title
     },
     scales: {
         x: { beginAtZero: true } 
@@ -190,31 +231,62 @@ function App() {
             Data Stream Status: Active | Last Update: {data.last_updated}
         </p>
         
-        {/* Filter Dropdown UI */}
-        <div className='filter-controls'>
-            <label>View Data For:</label>
-            <select 
-                value={filterDays} 
-                onChange={(e) => setFilterDays(parseInt(e.target.value))}
-            >
-                <option value={1}>Last 24 Hours</option>
-                <option value={7}>Last 7 Days</option>
-                <option value={30}>Last 30 Days</option>
-                <option value={90}>Last 90 Days</option>
-            </select>
+        {/* Filter Controls Container */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', marginBottom: '15px' }}>
+            
+            {/* Preset Days Filter Dropdown */}
+            <div className='filter-controls'>
+                <label>View Data For:</label>
+                <select 
+                    value={filterDays >= 0 ? filterDays : -1} 
+                    onChange={handleDaysChange}
+                >
+                    <option value={-1} disabled={filterDays !== -1}>Custom Range Active</option>
+                    <option value={1}>Last 24 Hours</option>
+                    <option value={7}>Last 7 Days</option>
+                    <option value={30}>Last 30 Days</option>
+                    <option value={90}>Last 90 Days</option>
+                </select>
+            </div>
+
+            {/* Custom Date Picker Controls */}
+            <div className='filter-controls'>
+                <label>Custom Date Range:</label>
+                <input 
+                    type="date" 
+                    value={startDate} 
+                    onChange={(e) => setStartDate(e.target.value)} 
+                    max={new Date().toISOString().split('T')[0]} 
+                    style={{ marginRight: '5px', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                />
+                <input 
+                    type="date" 
+                    value={endDate} 
+                    onChange={(e) => setEndDate(e.target.value)} 
+                    min={startDate || undefined}
+                    max={new Date().toISOString().split('T')[0]} 
+                    style={{ marginRight: '10px', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                />
+                <button 
+                    onClick={handleApplyRange} 
+                    style={{ padding: '8px 15px', borderRadius: '4px', border: 'none', backgroundColor: '#007bff', color: '#fff', cursor: 'pointer' }}
+                >
+                    Apply
+                </button>
+            </div>
         </div>
       </header>
       
       {/* KPI Grid (Responsive 4-2-1 Column Layout) */}
       <div className='kpi-grid'>
           <KPICard 
-              title={`Total Revenue (${filterDays}D)`} 
+              title={`Total Revenue (${currentFilterTitle})`} // Updated Title
               value={data.total_revenue.toFixed(2)} 
               unit="$" 
               color="#007bff" 
           />
           <KPICard 
-              title={`Total Transactions (${filterDays}D)`} 
+              title={`Total Transactions (${currentFilterTitle})`} // Updated Title
               value={totalTransactions} 
               color="#28a745" 
           />
@@ -247,7 +319,7 @@ function App() {
         
         {/* ROW 2: Regional Sales Doughnut Chart */}
         <div className='chart-container doughnut-container'>
-            <h3 style={{ textAlign: 'center', marginBottom: '15px', color: '#333' }}>Sales Distribution by Region (Last {filterDays} Days)</h3>
+            <h3 style={{ textAlign: 'center', marginBottom: '15px', color: '#333' }}>Sales Distribution by Region ({currentFilterTitle})</h3>
             <div className='doughnut-chart-wrapper'> 
                 <Doughnut data={regionalSalesData} />
             </div>
@@ -262,7 +334,7 @@ function App() {
         </div>
       </div>
 
-      {/* 🚨 NEW: Transactions Table Component is now included here */}
+      {/* Transactions Table Component */}
       <TransactionsTable transactions={data.latest_transactions || []} />
 
     </div>
