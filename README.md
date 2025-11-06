@@ -1,5 +1,9 @@
 # 📊 Real-Time Data Dashboard and Analytics Platform
 
+**Created by: Marjory D. Marquez**
+
+---
+
 ## 🌟 Purpose of the Project
 
 The primary purpose of this project is to build a full-stack, real-time data visualization platform that demonstrates proficiency in:
@@ -20,7 +24,38 @@ The primary purpose of this project is to build a full-stack, real-time data vis
 
 **Dashboard Features:**
 * **Time Filter:** Users can select a time range (e.g., Last 7 Days, Last 24 Hours).
+* **Date Range Selector:** Custom start and end dates can be applied for historical analysis.
+* **Data Export:** A button to export the current filtered data to a CSV file.
 * **Dynamic Updates:** The charts refresh periodically to reflect new data ingestion.
+
+## 🏗️ Complete Project Structure
+
+realtime-dashboard/       <-- Main Root Folder
+├── backend/              <-- Flask/Python Backend
+│   ├── venv/             <-- Python Virtual Environment
+│   ├── app.py            <-- Flask application (handles API, data generation, and CSV export)
+│   ├── requirements.txt  <-- Python dependencies (Flask, pandas, etc.)
+│   └── .flaskenv         <-- Flask environment configuration (optional)
+│
+├── frontend/             <-- Vite/React Frontend
+│   ├── node_modules/     <-- JS dependencies
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── CategorySalesChart.jsx
+│   │   │   ├── DailySalesChart.jsx
+│   │   │   └── RegionalSalesChart.jsx
+│   │   ├── App.css
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── .eslintrc.cjs
+│   ├── index.html
+│   ├── package.json      <-- JS dependencies (React, Chart.js, Axios)
+│   ├── package-lock.json
+│   └── vite.config.js
+│
+└── README.md
+
 
 ## 🚀 Getting Started
 
@@ -38,9 +73,10 @@ The primary purpose of this project is to build a full-stack, real-time data vis
     cd realtime-dashboard/backend
     ```
 2.  Create a Python virtual environment and activate it:
-    ```powershell
+    ```bash
     python -m venv venv
     .\venv\Scripts\Activate.ps1  # For PowerShell
+    # or source venv/bin/activate # For Linux/macOS
     ```
 3.  Install the required packages:
     ```powershell
@@ -70,3 +106,43 @@ The primary purpose of this project is to build a full-stack, real-time data vis
 
 ---
 
+## 📂 Source Code Files
+
+This section highlights the key files developed for this project.
+
+### `frontend/package.json`
+
+(Includes updated versions and removed unused dependencies)
+
+```json
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "Realtime dashboard frontend using React and Vite",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^1.6.8", 
+    "chart.js": "^4.4.2", 
+    "react": "^18.3.1", 
+    "react-chartjs-2": "^5.2.0", 
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.34.2",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-refresh": "^0.4.7",
+    "vite": "^5.2.13" 
+  },
+  "author": "",
+  "license": "ISC"
+}

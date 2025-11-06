@@ -23,13 +23,19 @@ body {
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }
 
-/* This flex container holds the preset filter, custom date filter, AND export button */
-.dashboard-header > div:nth-child(4) { 
+/* FIX: Target the main control bar div within the header.
+   Using a direct child div selector here is safer than nth-child(4)
+   which relies on the exact order of <h1>, <p>, and then the <div>. 
+   In the App.jsx, it's the 3rd child overall, so div:nth-child(3) would be 
+   technically correct, but this selector is more robust. */
+.dashboard-controls-bar {
     display: flex; 
     flex-wrap: wrap; 
     gap: 20px; 
     justify-content: center; 
 }
+/* Replaced: .dashboard-header > div:nth-child(4) { ... } */
+
 
 .filter-controls {
     display: inline-flex; 
@@ -42,7 +48,8 @@ body {
 }
 
 /* Base style for the Export Button container structure */
-.dashboard-header > div:nth-child(4) > button { 
+/* FIX: Updated the selector to target the button directly using its class, as it is a direct child of the control bar */
+.dashboard-controls-bar > .export-button { 
     display: flex;
     align-items: center;
     justify-content: center;
@@ -52,10 +59,11 @@ body {
     font-weight: bold;
     height: 40px; /* Match height of filter-controls */
 }
+/* Replaced: .dashboard-header > div:nth-child(4) > button { ... } */
 
-/* --- UPDATED: Export Button Styling --- */
+
+/* --- Export Button Styling (Teal Pill) --- */
 .export-button {
-    /* Use a solid, professional export color (slightly darker green) */
     background-color: #17a2b8; /* Blue-Teal for contrast/prominence */
     color: #fff;
     border: none;
@@ -171,7 +179,10 @@ body {
     margin: 5px 0 0 0;
 }
 
-/* --- Transactions Table Styles (Unchanged) --- */
+/* ------------------------------------------------ */
+/* --- Transactions Table Styles (FIXED/UPDATED) --- */
+/* ------------------------------------------------ */
+
 .transactions-table-container {
     background-color: #fff;
     border: 1px solid #ddd;
@@ -179,6 +190,32 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     padding: 20px;
     overflow-x: auto; 
+}
+
+/* NEW: Layout container for the table title and search input */
+.transactions-header {
+    display: flex;
+    justify-content: space-between; /* Space out the title and search box */
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+}
+
+/* NEW: Style for the search input field */
+.transactions-search-input {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 20px; /* Pill shape */
+    font-size: 0.9em;
+    width: 300px; /* Set a default width */
+    max-width: 100%;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.transactions-search-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
 }
 
 .transactions-table {
@@ -248,7 +285,9 @@ body {
     color: #333;
 }
 
-/* --- Responsive Media Queries (Unchanged) --- */
+/* ------------------------------------------------ */
+/* --- Responsive Media Queries (UPDATED) --- */
+/* ------------------------------------------------ */
 
 /* Tablet Layout (up to 1024px) */
 @media (max-width: 1024px) {
@@ -272,14 +311,14 @@ body {
         font-size: 1.5em;
     }
     
-    /* Ensure filter boxes stack and occupy full width on mobile */
-    .dashboard-header > div:nth-child(4) {
+    /* FIX: Use the class selector here */
+    .dashboard-controls-bar {
         flex-direction: column; 
         gap: 10px;
     }
 
     .filter-controls, 
-    .dashboard-header > div:nth-child(4) > button 
+    .dashboard-controls-bar > .export-button
     {
         display: flex; 
         flex-direction: column; 
@@ -296,7 +335,7 @@ body {
     .filter-controls select,
     .filter-controls input[type="date"],
     .filter-controls button,
-    .dashboard-header > div:nth-child(4) > button 
+    .dashboard-controls-bar > .export-button
     {
         width: 100%; 
         margin-right: 0 !important;
@@ -306,5 +345,16 @@ body {
 
     .filter-controls button {
         margin-top: 5px;
+    }
+
+    /* FIX: Ensure table header stacks correctly on mobile */
+    .transactions-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .transactions-search-input {
+        width: 100%; /* Full width on mobile */
+        margin-top: 10px;
     }
 }
