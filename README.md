@@ -28,6 +28,25 @@ The primary purpose of this project is to build a full-stack, real-time data vis
 * **Data Export:** A button to export the current filtered data to a CSV file.
 * **Dynamic Updates:** The charts refresh periodically to reflect new data ingestion.
 
+
+---
+
+## 📸 Dashboard Screenshots
+
+A visual representation of the final application.
+
+### Desktop View (Main Dashboard)
+![Dashboard Desktop View](images/Main-Dashboard.png)
+*A wide view showing the KPI cards, daily sales trend, and category/regional breakdowns.*
+
+### Responsive Mobile View
+![Dashboard Mobile View]()
+*A screenshot demonstrating the responsive layout of the dashboard on smaller screens.*
+
+
+---
+
+
 ## 🏗️ Complete Project Structure
 
 ```
