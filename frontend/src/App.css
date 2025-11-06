@@ -1,0 +1,139 @@
+/* src/App.css */
+
+/* --- Global Styles --- */
+body {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f7f9;
+}
+
+.App {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* --- Header --- */
+.dashboard-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.filter-controls {
+    display: inline-block;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    margin-top: 10px;
+}
+
+.filter-controls label {
+    margin-right: 10px;
+    font-weight: bold;
+    color: #333;
+}
+
+.filter-controls select {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+}
+
+/* --- KPI Grid (4 Columns on Desktop) --- */
+.kpi-grid {
+    display: grid;
+    /* Desktop: 4 columns */
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+/* --- Chart Grid (2 Columns on Desktop) --- */
+.chart-grid {
+    display: grid;
+    /* Desktop: 2 columns */
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+/* Base style for all chart containers */
+.chart-container {
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background-color: #fff;
+}
+
+/* Style for the Doughnut/Regional chart container to control height */
+.doughnut-container {
+    display: flex;
+    flex-direction: column; 
+    align-items: center;
+    max-height: 450px; /* Maintains consistency with other charts */
+}
+
+.doughnut-chart-wrapper {
+    width: 80%; 
+    height: 80%;
+}
+
+/* --- Responsive Media Queries --- */
+
+/* Tablet Layout (up to 1024px) */
+@media (max-width: 1024px) {
+    .kpi-grid {
+        /* Tablet: 2 columns */
+        grid-template-columns: repeat(2, 1fr); 
+    }
+    .chart-grid {
+        /* Tablet: 1 column */
+        grid-template-columns: 1fr; 
+    }
+}
+
+/* Mobile Layout (up to 600px) */
+@media (max-width: 600px) {
+    .App {
+        padding: 10px;
+    }
+    .kpi-grid {
+        /* Mobile: 1 column */
+        grid-template-columns: 1fr; 
+    }
+    .dashboard-header h1 {
+        font-size: 1.5em;
+    }
+    .filter-controls {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .filter-controls select {
+        width: 100%;
+        margin-top: 5px;
+    }
+}
+
+/* --- KPICard Specific Styles (Replaces inline styles) --- */
+.kpi-card-style {
+    padding: 15px; 
+    border-radius: 8px; 
+    background-color: #fff;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.kpi-card-style p {
+    margin: 0; 
+    font-size: 0.8em; 
+}
+
+.kpi-card-style h2 {
+    margin: 5px 0 0 0;
+}

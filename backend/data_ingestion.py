@@ -33,57 +33,68 @@ def generate_data(num_records=50000):
 # Initialize the global DataFrame
 SALES_DATA_DF = generate_data()
 
-# --- Data Processing Functions (Requires Lock) ---
+# --- Data Processing Functions (Requires Lock, Now Accepts Filter) ---
 
-def aggregate_data(lock: threading.Lock):
+def aggregate_data(lock: threading.Lock, days_ago: int = 7):
     """
     Processes the raw data into aggregated metrics.
-    Acquires the lock for thread-safe reading.
+    Acquires the lock for thread-safe reading and filters data based on days_ago.
     """
     global SALES_DATA_DF
     
+    # 1. Thread-safe reading and filtering
     with lock:
-        # Read a copy of the shared data
-        df_to_process = SALES_DATA_DF.copy() 
+        # Calculate the cutoff time for filtering
+        cutoff_time = datetime.now() - timedelta(days=days_ago)
         
-    if df_to_process.empty:
+        # Filter the DataFrame for the relevant time period
+        df_filtered = SALES_DATA_DF[SALES_DATA_DF['timestamp'] >= cutoff_time].copy() 
+        
+    if df_filtered.empty:
         return {
             'daily_sales': {'labels': [], 'data': []},
             'category_metrics': {'labels': [], 'data': []},
             'region_metrics': {'labels': [], 'data': []},
             'total_revenue': 0.0,
+            'total_transactions': 0, # Added for KPI calculation
             'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
 
-    # 1. Total Sales Trend
-    df_daily = df_to_process.set_index('timestamp').resample('D')['sales_amount'].sum().reset_index()
+    # 2. Aggregation using the filtered DataFrame
+    
+    # Total Sales Trend (Aggregated by Day)
+    df_daily = df_filtered.set_index('timestamp').resample('D')['sales_amount'].sum().reset_index()
     daily_sales = {
         'labels': df_daily['timestamp'].dt.strftime('%Y-%m-%d').tolist(),
         'data': df_daily['sales_amount'].round(2).tolist()
     }
 
-    # 2. Sales by Category
-    category_sales = df_to_process.groupby('category')['sales_amount'].sum().sort_values(ascending=False).round(2)
+    # Sales by Category
+    category_sales = df_filtered.groupby('category')['sales_amount'].sum().sort_values(ascending=False).round(2)
     category_metrics = {
         'labels': category_sales.index.tolist(),
         'data': category_sales.tolist()
     }
 
-    # 3. Sales by Region
-    region_sales = df_to_process.groupby('region')['sales_amount'].sum().sort_values(ascending=False).round(2)
+    # Sales by Region
+    region_sales = df_filtered.groupby('region')['sales_amount'].sum().sort_values(ascending=False).round(2)
     region_metrics = {
         'labels': region_sales.index.tolist(),
         'data': region_sales.tolist()
     }
 
-    # 4. Total Revenue (KPI)
-    total_revenue = df_to_process['sales_amount'].sum().round(2)
+    # Total Revenue (KPI)
+    total_revenue = df_filtered['sales_amount'].sum().round(2)
+    
+    # Total Transactions (NEW KPI)
+    total_transactions = len(df_filtered)
 
     return {
         'daily_sales': daily_sales,
         'category_metrics': category_metrics,
         'region_metrics': region_metrics,
         'total_revenue': total_revenue,
+        'total_transactions': total_transactions, # Return transaction count
         'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
 
